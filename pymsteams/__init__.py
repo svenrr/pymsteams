@@ -4,6 +4,7 @@
 # reference: https://dev.outlook.com/connectors/reference
 
 import requests
+from base64 import b64encode
 
 class TeamsWebhookException(Exception):
     """custom exception for failed webhook call"""
@@ -112,14 +113,48 @@ class potentialaction:
         self.payload["inputs"].append(input)
         return self
 
-    def addAction(self,_type,_name,_target):
+    def addAction(self,_type,_name,_target, _auth=None, _body=None):
+        """ 
+        Parameters
+        ----------
+        _type : string
+            DESCRIPTION.
+        _name : string
+            DESCRIPTION.
+        _target : string
+            DESCRIPTION.
+        _auth : tuple, optional
+            User & Password. The default is None.
+            --> _auth = ("user", "password")
+        _body : string, optional 
+        """
+        
         if "actions" not in self.payload.keys():
             self.payload["actions"] = []
-        action = {
+            
+        if _auth:
+            user = _auth[0]
+            password = _auth[1]
+            
+            
+            action = {
             "@type": _type,
             "name": _name,
-            "target": _target
+            "target": _target,
+            #"headers": [{"Authorization": "Basic {}".format(b64encode(bytes(f"{user}:{password}", "utf-8")).decode("ascii"))}]
+            "headers": [{"name": "Authorization", "value": "Basic {}".format(b64encode(bytes(f"{user}:{password}", "utf-8")).decode("ascii"))}]
         }
+            
+        if _body: 
+            action["body"] = _body
+            action["bodyContentType"] = "application/x-www-form-urlencoded"
+            
+        else:     
+            action = {
+                "@type": _type,
+                "name": _name,
+                "target": _target
+            }
 
         self.payload["actions"].append(action)
         return self
